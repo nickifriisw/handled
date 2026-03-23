@@ -1,0 +1,52 @@
+{
+  "name": "handled",
+  "version": "0.1.0",
+  "description": "HANDLED \u2014 AI SMS admin platform for solo trade businesses",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --testPathPattern=tests/",
+    "pre-deploy": "NODE_ENV=production npx tsx scripts/pre-deploy.ts",
+    "seed": "npx tsx scripts/seed.ts",
+    "backup": "npx tsx scripts/db-backup.ts",
+    "trial-reminders": "npx tsx scripts/trial-reminders.ts",
+    "daily-digest": "npx tsx scripts/daily-digest.ts",
+    "migrate": "npx tsx scripts/migrate.ts",
+    "expire-estimates": "npx tsx scripts/expire-estimates.ts",
+    "test-sms": "npx tsx scripts/send-test-sms.ts",
+    "setup-webhooks": "npx tsx scripts/setup-twilio-webhooks.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.29.0",
+    "@sentry/node": "^10.45.0",
+    "@sentry/profiling-node": "^10.45.0",
+    "@supabase/supabase-js": "^2.46.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "helmet": "^8.0.0",
+    "stripe": "^17.3.0",
+    "twilio": "^5.3.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.13",
+    "@types/node": "^22.7.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
+  }
+}

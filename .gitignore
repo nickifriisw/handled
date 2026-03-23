@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+out/
+
+# Environment — NEVER commit real credentials
+.env
+.env.local
+.env.production
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Test coverage
+coverage/
+
+# Railway
+.railway/
+
+# Database backups — may contain PII
+backup/
