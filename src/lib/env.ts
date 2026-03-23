@@ -20,7 +20,7 @@ const envSchema = z.object({
   // Twilio
   TWILIO_ACCOUNT_SID: z.string().startsWith('AC'),
   TWILIO_AUTH_TOKEN: z.string().min(10),
-  TWILIO_FROM_NUMBER: z.string().startsWith('+'),
+  TWILIO_FROM_NUMBER: z.string().startsWith('+').optional(),
 
   // Anthropic
   ANTHROPIC_API_KEY: z.string().startsWith('sk-ant'),
@@ -29,7 +29,7 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
   STRIPE_PRICE_ID_MONTHLY: z.string().startsWith('price_'),
-  STRIPE_PRICE_ID_ANNUAL: z.string().startsWith('price_'),
+  STRIPE_PRICE_ID_ANNUAL: z.string().startsWith('price_').optional(),
 
   // Loops
   LOOPS_API_KEY: z.string().min(1),
