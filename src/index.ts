@@ -55,7 +55,11 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === 'production'
-        ? [process.env.APP_URL ?? '', 'https://handled.framer.site']
+        ? [
+            process.env.APP_URL ?? '',
+            process.env.FRONTEND_URL ?? '',
+            'https://handled.framer.site',
+          ].filter(Boolean)
         : '*',
     credentials: true,
   })
