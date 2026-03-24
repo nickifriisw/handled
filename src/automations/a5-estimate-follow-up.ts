@@ -29,6 +29,17 @@ export async function scheduleEstimateFollowUps(params: {
   const amountFormatted = (estimate.amount_pence / 100).toFixed(2);
 
   for (const days of FOLLOW_UP_DELAYS_DAYS) {
+    // Check estimate is still in 'sent' state before scheduling each follow-up.
+    // Prevents race condition where estimate is accepted/declined while the
+    // loop is still scheduling.
+    const { data: current } = await supabaseAdmin
+      .from('estimates')
+      .select('status')
+      .eq('id', estimate.id)
+      .single();
+
+    if (!current || current.status !== 'sent') break;
+
     await fireAutomation({
       owner,
       customer,
