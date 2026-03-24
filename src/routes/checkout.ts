@@ -41,15 +41,15 @@ router.post('/create-session', requireAuth, async (req: Request, res: Response) 
     return;
   }
 
-  const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
+  const frontendUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3001';
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     customer_email: owner.stripe_customer_id ? undefined : owner.email,
     customer: owner.stripe_customer_id ?? undefined,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl.replace(':3000', ':3001')}/dashboard?upgraded=true`,
-    cancel_url: `${appUrl.replace(':3000', ':3001')}/dashboard?upgrade_cancelled=true`,
+    success_url: `${frontendUrl}/dashboard?upgraded=true`,
+    cancel_url: `${frontendUrl}/dashboard?upgrade_cancelled=true`,
     subscription_data: {
       metadata: {
         owner_id: owner.id,
@@ -83,12 +83,11 @@ router.post('/portal', requireAuth, async (req: Request, res: Response) => {
     return;
   }
 
-  const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
-  const dashboardUrl = appUrl.replace(':3000', ':3001');
+  const frontendUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:3001';
 
   const session = await stripe.billingPortal.sessions.create({
     customer: owner.stripe_customer_id,
-    return_url: `${dashboardUrl}/settings`,
+    return_url: `${frontendUrl}/settings`,
   });
 
   res.json({ url: session.url });

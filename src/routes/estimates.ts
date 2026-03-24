@@ -99,12 +99,12 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 
   // Send initial estimate SMS to customer (includes accept/decline link)
-  const appUrl = process.env.APP_URL ?? '';
-  if (appUrl && owner.twilio_number) {
+  const frontendUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? '';
+  if (frontendUrl && owner.twilio_number) {
     const allowance = await checkSmsAllowance(owner.id);
     if (allowance.allowed) {
       const amountFormatted = (estimate.amount_pence / 100).toFixed(2);
-      const acceptLink = `${appUrl}/e/${estimate.public_token}`;
+      const acceptLink = `${frontendUrl}/e/${estimate.public_token}`;
       const smsBody =
         `Hi ${customer.name ?? 'there'}, ${owner.business_name} has sent you an estimate for ` +
         `${estimate.description}: £${amountFormatted}. ` +
