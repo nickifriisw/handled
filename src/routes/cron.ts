@@ -228,4 +228,103 @@ router.post('/reset-sms-counts', async (req: Request, res: Response) => {
   res.json({ reset: count ?? 0 });
 });
 
+
+
+/**
+ * POST /cron/daily-digest
+ *
+ * Sends a daily activity summary email to every active/trialing owner
+ * who had any activity in the past 24 hours.
+ *
+ * Schedule: 0 8 * * *  (08:00 UTC daily)
+ *
+ * Requires LOOPS_TEMPLATE_DAILY_DIGEST env var to be set.
+ * If unset, the handler returns 200 with emails_sent: 0 (no-op).
+ *
+ * Protected by Bearer CRON_SECRET.
+ */
+router.post('/daily-digest', async (req: Request, res: Response) => {
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = req.headers.authorization;
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const log = logger.child({ handler: 'cron/daily-digest' });
+
+  const loopsApiKey       = process.env.LOOPS_API_KEY;
+  const loopsTemplateId   = process.env.LOOPS_TEMPLATE_DAILY_DIGEST;
+
+  if (!loopsApiKey) {
+    log.warn('LOOPS_API_KEY not set — skipping daily digest');
+    res.json({ emails_sent: 0, skipped: 0, note: 'LOOPS_API_KEY not configured' });
+    return;
+  }
+
+  const yesterday  = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const dateLabel  = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
+
+  const { data: owners, error } = await supabaseAdmin
+    .from('business_owners')
+    .select('id, email, business_name')
+    .in('subscription_status', ['active', 'trialing']);
+
+  if (error || !owners) {
+    log.error('daily-digest: failed to fetch owners', { error });
+    res.status(500).json({ error: 'Failed to fetch owners' });
+    return;
+  }
+
+  let sent    = 0;
+  let skipped = 0;
+
+  for (const owner of owners) {
+    const [jobs, estimates, messages, customers] = await Promise.all([
+      supabaseAdmin.from('jobs').select('status').eq('owner_id', owner.id).gte('created_at', yesterday),
+      supabaseAdmin.from('estimates').select('status').eq('owner_id', owner.id).gte('created_at', yesterday),
+      supabaseAdmin.from('messages').select('direction').eq('owner_id', owner.id).eq('direction', 'outbound').gte('created_at', yesterday),
+      supabaseAdmin.from('customers').select('id').eq('owner_id', owner.id).gte('created_at', yesterday),
+    ]);
+
+    const jobRows      = jobs.data       ?? [];
+    const estimateRows = estimates.data  ?? [];
+    const stats = {
+      jobs_created:       jobRows.length,
+      jobs_completed:     jobRows.filter((j: { status: string }) => j.status === 'completed').length,
+      estimates_sent:     estimateRows.length,
+      estimates_accepted: estimateRows.filter((e: { status: string }) => e.status === 'accepted').length,
+      sms_sent:           messages.data?.length ?? 0,
+      new_customers:      customers.data?.length ?? 0,
+    };
+
+    const totalActivity = stats.jobs_created + stats.estimates_sent + stats.sms_sent + stats.new_customers;
+    if (totalActivity === 0) { skipped++; continue; }
+
+    if (!loopsTemplateId) { skipped++; continue; }
+
+    try {
+      const loopsRes = await fetch('https://app.loops.so/api/v1/transactional', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${loopsApiKey}` },
+        body: JSON.stringify({
+          transactionalId: loopsTemplateId,
+          email: owner.email,
+          dataVariables: { business_name: owner.business_name, date: dateLabel, ...stats },
+        }),
+      });
+      if (!loopsRes.ok) throw new Error(`Loops ${loopsRes.status}`);
+      sent++;
+    } catch (err) {
+      log.error('daily-digest: failed to send email', { email: owner.email, error: err instanceof Error ? err.message : String(err) });
+      captureError(err, { owner_id: owner.id });
+    }
+  }
+
+  log.info('daily-digest done', { sent, skipped });
+  res.json({ emails_sent: sent, skipped });
+});
+
 export default router;
