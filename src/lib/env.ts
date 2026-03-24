@@ -38,6 +38,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   APP_URL: z.string().url(),
+  FRONTEND_URL: z.string().url().optional(), // frontend Vercel URL for SMS links & Stripe redirects
   CRON_SECRET: z.string().min(16),
 });
 
