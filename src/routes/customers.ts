@@ -266,4 +266,43 @@ function csvCell(value: string): string {
   return value;
 }
 
+
+/**
+ * DELETE /customers/:id
+ *
+ * GDPR right to erasure — permanently deletes a customer and ALL data
+ * associated with them (messages, jobs, estimates, scheduled_messages).
+ *
+ * Supabase cascades take care of related rows if FK constraints are set
+ * to ON DELETE CASCADE. If not, we delete manually in dependency order.
+ *
+ * This action is irreversible.
+ */
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+  const owner = req.owner!;
+  const customerId = req.params.id as string;
+
+  // Verify the customer belongs to this owner before deleting
+  const { data: customer, error: fetchErr } = await supabaseAdmin
+    .from('customers')
+    .select('id')
+    .eq('id', customerId)
+    .eq('owner_id', owner.id)
+    .single();
+
+  if (fetchErr || !customer) {
+    res.status(404).json({ error: 'Customer not found' });
+    return;
+  }
+
+  // Delete in dependency order (in case cascades aren't configured)
+  await supabaseAdmin.from('scheduled_messages').delete().eq('customer_id', customerId);
+  await supabaseAdmin.from('messages').delete().eq('customer_id', customerId);
+  await supabaseAdmin.from('estimates').delete().eq('customer_id', customerId);
+  await supabaseAdmin.from('jobs').delete().eq('customer_id', customerId);
+  await supabaseAdmin.from('customers').delete().eq('id', customerId);
+
+  res.status(204).send();
+});
+
 export default router;

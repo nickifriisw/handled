@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { supabaseAdmin } from '../lib/supabase';
 import { requireAuth } from '../middleware/auth';
-import { TRIAL_SMS_LIMIT } from '../lib/twilio';
+import { TRIAL_SMS_LIMIT, releaseNumber } from '../lib/twilio';
 
 const router = Router();
 
@@ -73,6 +73,60 @@ router.patch('/', requireAuth, async (req: Request, res: Response) => {
   }
 
   res.json(safeOwner(updated as unknown as Record<string, unknown>));
+});
+
+
+/**
+ * DELETE /settings/account
+ *
+ * GDPR right to erasure — permanently deletes the authenticated owner's
+ * account and ALL associated data:
+ *   - Releases their Twilio phone number back to the pool
+ *   - Deletes all customers, jobs, estimates, messages, scheduled_messages,
+ *     and automations (Supabase cascades handle this via owner_id FK)
+ *   - Deletes the business_owners row
+ *   - Deletes the Supabase Auth user
+ *
+ * NOTE: Does NOT cancel the Stripe subscription automatically. The owner
+ * should cancel via the billing portal first. If they forget, Stripe will
+ * continue billing until the subscription naturally expires or is cancelled
+ * by the founder manually.
+ *
+ * This action is irreversible.
+ */
+router.delete('/account', requireAuth, async (req: Request, res: Response) => {
+  const owner = req.owner!;
+
+  try {
+    // 1. Release Twilio number (non-fatal)
+    if (owner.twilio_number) {
+      await releaseNumber(owner.twilio_number).catch((err) =>
+        console.warn('[gdpr] Twilio release failed — continuing', err)
+      );
+    }
+
+    // 2. Delete all tenant data in dependency order
+    //    (belt-and-suspenders in case RLS cascades aren't configured)
+    await supabaseAdmin.from('scheduled_messages').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('messages').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('estimates').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('jobs').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('automations').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('customers').delete().eq('owner_id', owner.id);
+    await supabaseAdmin.from('business_owners').delete().eq('id', owner.id);
+
+    // 3. Delete the Supabase Auth user (removes login credentials)
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(owner.id);
+    if (authErr) {
+      console.error('[gdpr] Failed to delete auth user', authErr);
+      // Data is already deleted — don't block the response
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    console.error('[gdpr] account deletion failed', err);
+    res.status(500).json({ error: 'Account deletion failed. Please contact support.' });
+  }
 });
 
 export default router;

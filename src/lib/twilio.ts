@@ -118,3 +118,16 @@ export async function provisionNumber(params: {
 
   return purchased.phoneNumber;
 }
+
+
+/**
+ * Release a Twilio phone number back to the pool.
+ * Called when a business owner deletes their account (GDPR erasure).
+ * Looks up the number's SID by its E.164 phone number, then deletes it.
+ * Non-fatal if the number isn't found (may already be released).
+ */
+export async function releaseNumber(phoneNumber: string): Promise<void> {
+  const numbers = await twilioClient.incomingPhoneNumbers.list({ phoneNumber });
+  if (numbers.length === 0) return; // already released or not found
+  await twilioClient.incomingPhoneNumbers(numbers[0].sid).remove();
+}
