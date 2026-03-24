@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAdmin } from '../lib/supabase';
 import { BusinessOwner } from '../types';
 import { logger } from '../lib/logger';
 
@@ -42,7 +42,7 @@ export async function requireAuth(
     return;
   }
 
-  const { data: owner, error: ownerError } = await supabase
+  const { data: owner, error: ownerError } = await supabaseAdmin
     .from('business_owners')
     .select('*')
     .eq('id', user.id)
