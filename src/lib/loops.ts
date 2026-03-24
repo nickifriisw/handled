@@ -154,6 +154,25 @@ export async function sendCancellationEmail(params: {
   });
 }
 
+export async function sendPaymentReceivedEmail(params: {
+  email: string;
+  fullName: string;
+  businessName: string;
+  amountFormatted: string;
+}): Promise<void> {
+  const id = templateId("LOOPS_TEMPLATE_PAYMENT_RECEIVED");
+  if (!id) return;
+  await sendTransactional({
+    transactionalId: id,
+    email: params.email,
+    dataVariables: {
+      full_name:        params.fullName,
+      business_name:    params.businessName,
+      amount_formatted: params.amountFormatted,
+    },
+  });
+}
+
 /**
  * sendInboundMessageNotification
  *

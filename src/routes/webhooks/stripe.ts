@@ -5,6 +5,7 @@ import {
   sendWelcomeEmail,
   sendSubscriptionActivatedEmail,
   sendPaymentFailedEmail,
+  sendPaymentReceivedEmail,
   sendCancellationEmail,
 } from '../../lib/loops';
 
@@ -223,6 +224,21 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
     .update({ subscription_status: 'active' })
     .eq('stripe_customer_id', customerId)
     .eq('subscription_status', 'past_due');
+
+
+  // Send payment confirmation email
+  const { data: owner } = await supabaseAdmin
+    .from('business_owners')
+    .select('email, full_name, business_name')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (owner) {
+    const amountPaid = invoice.amount_paid ?? 0;
+    const currency = (invoice.currency ?? 'gbp').toUpperCase();
+    const amountFormatted = new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amountPaid / 100);
+    await sendPaymentReceivedEmail({ email: owner.email, fullName: owner.full_name, businessName: owner.business_name, amountFormatted });
+  }
 }
 
 // ─── Raw body middleware ───────────────────────────────────────────────────────
