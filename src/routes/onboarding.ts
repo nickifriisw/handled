@@ -148,6 +148,7 @@ const selfProvisionSchema = z.object({
   business_name: z.string().min(1),
   trade_type: z.string().min(1),
   google_review_link: z.string().url().optional(),
+  owner_mobile: z.string().min(7).optional(),
   timezone: z.string().default('Europe/London'),
 });
 
@@ -172,7 +173,7 @@ router.post('/self-provision', requireJwt, async (req: Request, res: Response) =
     return;
   }
 
-  const { full_name, business_name, trade_type, google_review_link, timezone } = parsed.data;
+  const { full_name, business_name, trade_type, google_review_link, owner_mobile, timezone } = parsed.data;
 
   try {
     // 1. Upsert business owner (safe to call if row already exists)
@@ -186,6 +187,7 @@ router.post('/self-provision', requireJwt, async (req: Request, res: Response) =
           business_name,
           trade_type,
           google_review_link: google_review_link ?? null,
+          owner_mobile: owner_mobile ?? null,
           timezone,
           subscription_status: 'trialing',
           trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),

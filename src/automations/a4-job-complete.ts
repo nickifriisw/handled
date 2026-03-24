@@ -19,6 +19,12 @@ export async function sendJobComplete(params: {
 }): Promise<void> {
   const { owner, customer, job } = params;
 
+  // If the owner hasn't set their Google review link yet, override the template
+  // with a simple thank-you so customers don't receive a broken "review here: " SMS.
+  const overrideTemplate = !owner.google_review_link
+    ? `Hi {{customer_name}}, thanks for choosing {{business_name}} today! It was great working with you. Don't hesitate to get in touch if you need anything in future.`
+    : undefined;
+
   await fireAutomation({
     owner,
     customer,
@@ -27,5 +33,6 @@ export async function sendJobComplete(params: {
       google_review_link: owner.google_review_link ?? '',
     },
     jobId: job.id,
+    templateOverride: overrideTemplate,
   });
 }

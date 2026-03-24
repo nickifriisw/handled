@@ -38,6 +38,31 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /messages/:customerId/read
+ * Mark all inbound messages from a customer as read.
+ * Called when the owner opens a conversation thread.
+ */
+router.post('/:customerId/read', requireAuth, async (req: Request, res: Response) => {
+  const owner = req.owner!;
+  const customerId = req.params.customerId;
+
+  const { error } = await supabaseAdmin
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('owner_id', owner.id)
+    .eq('customer_id', customerId)
+    .eq('direction', 'inbound')
+    .is('read_at', null);
+
+  if (error) {
+    res.status(500).json({ error: 'Failed to mark messages as read' });
+    return;
+  }
+
+  res.json({ ok: true });
+});
+
+/**
  * POST /messages/send
  * Send a manual (non-automated) outbound SMS to a customer.
  */

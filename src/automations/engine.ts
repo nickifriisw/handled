@@ -19,6 +19,8 @@ interface FireParams {
   delayMinutes?: number;
   jobId?: string;
   estimateId?: string;
+  /** Override the stored template (e.g. when a required variable like google_review_link is missing) */
+  templateOverride?: string;
 }
 
 /**
@@ -46,7 +48,7 @@ export async function getAutomation(
  * schedule it for later (delay_minutes > 0).
  */
 export async function fireAutomation(params: FireParams): Promise<void> {
-  const { owner, customer, automationType, variables, jobId, estimateId } = params;
+  const { owner, customer, automationType, variables, jobId, estimateId, templateOverride } = params;
 
   const log = logger.child({ owner_id: owner.id, customer_id: customer.id, automation: automationType });
 
@@ -72,7 +74,7 @@ export async function fireAutomation(params: FireParams): Promise<void> {
   };
 
   const body = await personalizeMessage({
-    template: automation.template,
+    template: templateOverride ?? automation.template,
     variables: allVars,
   });
 

@@ -153,3 +153,35 @@ export async function sendCancellationEmail(params: {
     },
   });
 }
+
+/**
+ * sendInboundMessageNotification
+ *
+ * Sent to the business owner whenever a customer replies to an SMS.
+ * Requires LOOPS_TEMPLATE_INBOUND_MESSAGE to be set.
+ *
+ * Template variables:
+ *   full_name, business_name, customer_name, customer_phone, message_preview
+ */
+export async function sendInboundMessageNotification(params: {
+  email: string;
+  fullName: string;
+  businessName: string;
+  customerName: string;
+  customerPhone: string;
+  messagePreview: string;
+}): Promise<void> {
+  const id = templateId('LOOPS_TEMPLATE_INBOUND_MESSAGE');
+  if (!id) return;
+  await sendTransactional({
+    transactionalId: id,
+    email: params.email,
+    dataVariables: {
+      full_name:        params.fullName,
+      business_name:    params.businessName,
+      customer_name:    params.customerName,
+      customer_phone:   params.customerPhone,
+      message_preview:  params.messagePreview,
+    },
+  });
+}
