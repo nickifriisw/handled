@@ -69,4 +69,36 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   res.json({ message: data });
 });
 
+/**
+ * PATCH /queue/:id
+ * Edit the body of a pending scheduled message before it fires.
+ * Only pending messages can be edited — sent/cancelled ones are immutable.
+ */
+router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
+  const owner = req.owner!;
+  const id = req.params.id as string;
+  const { body } = req.body as { body?: string };
+
+  if (!body?.trim()) {
+    res.status(400).json({ error: 'body is required' });
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('scheduled_messages')
+    .update({ body: body.trim() })
+    .eq('id', id)
+    .eq('owner_id', owner.id)
+    .eq('status', 'pending')
+    .select('*, customers(id, name, phone)')
+    .single();
+
+  if (error || !data) {
+    res.status(404).json({ error: 'Message not found or already sent' });
+    return;
+  }
+
+  res.json({ message: data });
+});
+
 export default router;

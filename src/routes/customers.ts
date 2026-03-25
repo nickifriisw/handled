@@ -128,10 +128,11 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
   const owner = req.owner!;
   const customerId = req.params.id as string;
 
-  const { name, opted_out, notes } = req.body as { name?: string; opted_out?: boolean; notes?: string | null };
+  const { name, phone, opted_out, notes } = req.body as { name?: string; phone?: string; opted_out?: boolean; notes?: string | null };
 
   const updates: Record<string, unknown> = {};
-  if (typeof name === 'string') updates.name = name;
+  if (typeof name === 'string') updates.name = name.trim() || null;
+  if (typeof phone === 'string' && phone.trim()) updates.phone = phone.trim();
   if (typeof opted_out === 'boolean') updates.opted_out = opted_out;
   if (notes !== undefined) updates.notes = notes;
 
