@@ -189,8 +189,17 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
 
   const { eta_minutes, ...jobUpdates } = updates;
 
+  // When marking complete, stamp the time
   if (jobUpdates.status === JobStatus.Completed && !jobUpdates.completed_at) {
     jobUpdates.completed_at = new Date().toISOString();
+  }
+
+  // When reopening a completed/cancelled job, clear completed_at
+  const isReopening =
+    (existingJob.status === JobStatus.Completed || existingJob.status === JobStatus.Cancelled) &&
+    jobUpdates.status === JobStatus.Booked;
+  if (isReopening) {
+    (jobUpdates as Record<string, unknown>).completed_at = null;
   }
 
   const { data: job, error: updateErr } = await supabaseAdmin
@@ -206,6 +215,15 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 
   const customer = existingJob.customers;
+
+  // When reopening, cancel any pending scheduled messages for this job
+  if (isReopening) {
+    await supabaseAdmin
+      .from('scheduled_messages')
+      .update({ status: 'cancelled' })
+      .eq('job_id', jobId)
+      .eq('status', 'pending');
+  }
 
   if (jobUpdates.status === JobStatus.OnMyWay) {
     sendOnMyWay({ owner, customer, job, etaMinutes: eta_minutes }).catch(console.error);

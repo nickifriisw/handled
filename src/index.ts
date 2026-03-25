@@ -59,6 +59,7 @@ app.use(
             process.env.APP_URL ?? '',
             process.env.FRONTEND_URL ?? '',
             'https://handled.framer.site',
+            'https://app.gethandled.uk',  // production custom domain
           ].filter(Boolean)
         : '*',
     credentials: true,
