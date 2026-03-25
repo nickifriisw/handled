@@ -35,3 +35,4 @@ coverage/
 
 # Database backups — may contain PII
 backup/
+test_synthetic.js

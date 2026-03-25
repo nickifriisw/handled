@@ -103,6 +103,7 @@ const updateJobSchema = z.object({
   scheduled_at: z.string().datetime().optional(),
   address: z.string().optional(),
   eta_minutes: z.number().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 /**

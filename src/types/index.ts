@@ -85,6 +85,7 @@ export interface Job {
   description: string;
   scheduled_at: string | null;
   address: string | null;
+  notes: string | null;
   status: JobStatus;
   completed_at: string | null;
   created_at: string;
@@ -171,6 +172,7 @@ export interface UpdateJobBody {
   description?: string;
   scheduled_at?: string;
   address?: string;
+  notes?: string | null;
 }
 
 export interface CreateEstimateBody {
