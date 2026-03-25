@@ -89,8 +89,8 @@ router.get('/', async (_req: Request, res: Response) => {
   } else {
     checks.webhooks = {
       status: 'ok',
-      sms_url: `${appUrl}/webhooks/sms`,
-      voice_url: `${appUrl}/webhooks/voice`,
+      sms_url: `${appUrl}/webhook/sms/inbound`,
+      voice_url: `${appUrl}/webhook/call/missed`,
     };
   }
 
