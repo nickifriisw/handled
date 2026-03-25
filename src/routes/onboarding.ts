@@ -15,7 +15,7 @@ const DEFAULT_TEMPLATES: Record<AutomationType, { template: string; delay_minute
   },
   [AutomationType.BookingConfirmation]: {
     template:
-      'Hi {{customer_name}}, your booking with {{business_name}} is confirmed for {{scheduled_date}} at {{scheduled_time}}. Address: {{address}}. Any questions? Just reply here.',
+      'Hi {{customer_name}}, confirmed: {{business_name}} on {{scheduled_date}} at {{scheduled_time}}. Address: {{address}}. Any questions? Just reply here.',
     delay_minutes: 0,
   },
   [AutomationType.OnMyWay]: {
@@ -25,7 +25,7 @@ const DEFAULT_TEMPLATES: Record<AutomationType, { template: string; delay_minute
   },
   [AutomationType.JobComplete]: {
     template:
-      'Hi {{customer_name}}, great to see you today! Thanks for using {{business_name}}. If you\'re happy with the work, a quick Google review would mean the world: {{google_review_link}}',
+      'Hi {{customer_name}}, thanks for choosing {{business_name}} today! Happy with the work? A Google review means the world to us: {{google_review_link}}',
     delay_minutes: 60,
   },
   [AutomationType.EstimateFollowUp]: {
@@ -35,7 +35,7 @@ const DEFAULT_TEMPLATES: Record<AutomationType, { template: string; delay_minute
   },
   [AutomationType.ReferralAsk]: {
     template:
-      'Hi {{customer_name}}, hope everything is still working great! If you know anyone who needs a {{trade_type}}, I\'d really appreciate the recommendation. Thanks again — {{owner_name}}',
+      'Hi {{customer_name}}, hope the work\'s holding up well! Know anyone who needs a {{trade_type}}? A recommendation means a lot — {{owner_name}}',
     delay_minutes: 4320, // 3 days
   },
 };
