@@ -100,9 +100,11 @@ export async function provisionNumber(params: {
 }): Promise<string> {
   const { appUrl, areaCode } = params;
 
+  // Use mobile numbers for UK — they look more natural to customers (07xxx)
+  // and are more reliably SMS-capable than geographic (01xxx/02xxx) numbers.
   const available = await twilioClient
     .availablePhoneNumbers('GB')
-    .local.list({ limit: 1, areaCode });
+    .mobile.list({ limit: 1 });
 
   if (available.length === 0) {
     throw new Error('No available UK phone numbers found');
